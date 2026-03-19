@@ -2,6 +2,14 @@ from fastapi import FastAPI, File, UploadFile
 import shutil
 from typing import BinaryIO
 from pypdf import PdfReader
+from dotenv import load_dotenv
+from openai import OpenAI
+import os
+
+# Load env variables
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def extract_text(pdf_path: str) -> str:
     reader = PdfReader(pdf_path)
@@ -20,6 +28,21 @@ def chunk_text(text: str, chunk_size: int = 500):
 
     return chunks
 
+def get_embeddings(texts: list) -> list:
+    # Clean text
+    cleaned_texts = [t.strip().replace("\n", " ") for t in texts]
+
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=cleaned_texts
+    )
+    embeddings = []
+
+    for item in response.data:
+        embeddings.append(item.embedding)
+
+    return embeddings
+
 app = FastAPI()
 
 @app.get("/")
@@ -37,7 +60,9 @@ def upload_file(file: UploadFile = File(...)):
 
     chunks = chunk_text(text)
 
+    embeddings = get_embeddings(chunks)
+
     return {"filename": file.filename,
             "num_chunks": len(chunks),
-            "sample_chunks": chunks[0] if chunks else ""
+            "embedding_dimension": len(embeddings[0] if embeddings else 0)
             }
