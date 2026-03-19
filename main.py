@@ -12,6 +12,14 @@ def extract_text(pdf_path: str) -> str:
             text += page.extract_text()
     return text
 
+def chunk_text(text: str, chunk_size: int = 500):
+    chunks = []
+
+    for i in range(0, len(text), chunk_size):
+        chunks.append(text[i:i + chunk_size])
+
+    return chunks
+
 app = FastAPI()
 
 @app.get("/")
@@ -27,6 +35,9 @@ def upload_file(file: UploadFile = File(...)):
 
     text = extract_text(file_path)
 
+    chunks = chunk_text(text)
+
     return {"filename": file.filename,
-            "text_preview": text[:500] # first 500 chars
+            "num_chunks": len(chunks),
+            "sample_chunks": chunks[0] if chunks else ""
             }
