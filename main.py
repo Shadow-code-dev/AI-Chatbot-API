@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Body, HTTPException
 import shutil
 from typing import BinaryIO
 from pypdf import PdfReader
@@ -54,6 +54,23 @@ def create_faiss_index(embeddings: list):
     index.add(np.array(embeddings).astype(np.float32))
     return index
 
+def search_similar_chunks(query: str, k: int = 3) -> list:
+    global stored_chunks, faiss_index
+
+    # Converting query -> embedding
+    query_embedding = get_embeddings([query])[0]
+
+    # Search in FAISS
+    distances, indices = faiss_index.search(
+        np.array([query_embedding]).astype(np.float32),
+        k
+    )
+
+    # Get relevant chunks
+    results = [stored_chunks[i] for i in indices[0]]
+
+    return results
+
 app = FastAPI()
 
 @app.get("/")
@@ -63,6 +80,7 @@ def home():
 @app.post("/upload")
 def upload_file(file: UploadFile = File(...)):
     global stored_chunks, faiss_index
+
     file_path = f"uploads/{file.filename}"
 
     with open(file_path, "wb") as buffer: # type: BinaryIO
@@ -78,4 +96,15 @@ def upload_file(file: UploadFile = File(...)):
             "num_chunks": len(chunks),
             "embedding_dimension": len(embeddings[0] if embeddings else 0),
             "message": "Embeddings stored in FAISS"
+            }
+
+@app.post("/ask")
+def ask_question(question: str = Body(...)):
+    if faiss_index is None:
+        raise HTTPException(status_code=404, detail="No document uploaded yet")
+
+    relevant_chunks = search_similar_chunks(question)
+
+    return {"question": question,
+            "relevant_chunks": relevant_chunks
             }
