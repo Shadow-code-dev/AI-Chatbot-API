@@ -71,6 +71,30 @@ def search_similar_chunks(query: str, k: int = 3) -> list:
 
     return results
 
+# Answer Generation Function
+def generate_answer(context: str, question: str):
+    prompt = f"""
+    You are a helpful AI assistant.
+    
+    Answer the question based ONLY on the context below.
+    If the answer is not in the context, say "I don't know".
+
+    Context:
+    {context}
+
+    Question:
+    {question}
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    return response.choices[0].message.content
+
 app = FastAPI()
 
 @app.get("/")
@@ -104,7 +128,11 @@ def ask_question(question: str = Body(...)):
         raise HTTPException(status_code=404, detail="No document uploaded yet")
 
     relevant_chunks = search_similar_chunks(question)
+    # Combine chunks into context
+    context = " ".join(relevant_chunks)
+    # Generate answer
+    answer = generate_answer(context, question)
 
     return {"question": question,
-            "relevant_chunks": relevant_chunks
+            "answer": answer
             }
