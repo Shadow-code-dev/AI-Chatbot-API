@@ -1,11 +1,12 @@
 from openai import OpenAI
-from dotenv import load_dotenv
-import os
+# from dotenv import load_dotenv
+# import os
+from app.config import OPENAI_API_KEY
 
-# Load env variables
-load_dotenv()
+# # Load env variables
+# load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def get_embeddings(texts: list) -> list:
     # Clean text
