@@ -3,6 +3,9 @@ from fastapi import APIRouter, Body, HTTPException
 from app.services.faiss_service import search_similar_chunks, get_faiss_index
 from app.services.embedding_service import generate_answer
 
+from app.db.database import SessionLocal
+from app.db.models import Chat
+
 router = APIRouter()
 
 @router.post("/ask")
@@ -15,6 +18,20 @@ def ask_question(question: str = Body(...)):
     context = " ".join(relevant_chunks)
     # Generate answer
     answer = generate_answer(context, question)
+
+    # Database Logic
+    db = SessionLocal()
+
+    try:
+        chat = Chat(
+            question=question,
+            answer=answer
+        )
+
+        db.add(chat)
+        db.commit()
+    finally:
+        db.close()
 
     return {
         "question": question,

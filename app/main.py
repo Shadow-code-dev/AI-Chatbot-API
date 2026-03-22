@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from app.routes import upload, chat
 import app.config
+from app.db.database import engine, Base
+
+Base.metadata.create_all(bind=engine)
 
 fastapi_app = FastAPI()
 

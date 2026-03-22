@@ -6,6 +6,9 @@ from app.services.pdf_service import extract_text, chunk_text
 from app.services.embedding_service import get_embeddings
 from app.services.faiss_service import create_faiss_index, stored_chunks, set_faiss_index
 
+from app.db.database import SessionLocal
+from app.db.models import Document
+
 router = APIRouter()
 
 @router.post("/upload")
@@ -22,6 +25,20 @@ def upload_file(file: UploadFile = File(...)):
     index = create_faiss_index(embeddings)
     # Store Globally
     set_faiss_index(index, chunks)
+
+    # Database Logic
+    db = SessionLocal()
+
+    try:
+        docs = Document(
+            filename = file.filename,
+            content=text
+        )
+
+        db.add(docs)
+        db.commit()
+    finally:
+        db.close()
 
     return {
         "filename": file.filename,
