@@ -1,10 +1,5 @@
 from openai import OpenAI
-# from dotenv import load_dotenv
-# import os
 from app.config import OPENAI_API_KEY
-
-# # Load env variables
-# load_dotenv()
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
