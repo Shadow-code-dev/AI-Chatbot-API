@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Depends
 
 from app.services.faiss_service import search_similar_chunks, get_faiss_index
 from app.services.embedding_service import generate_answer
+from app.services.auth_service import get_current_user
 
 from app.db.database import SessionLocal
 from app.db.models import Chat
@@ -9,7 +10,7 @@ from app.db.models import Chat
 router = APIRouter()
 
 @router.post("/ask")
-def ask_question(question: str = Body(...)):
+def ask_question(question: str = Body(...), user = Depends(get_current_user)):
     if get_faiss_index() is None:
         raise HTTPException(status_code=404, detail="No document uploaded yet")
 
