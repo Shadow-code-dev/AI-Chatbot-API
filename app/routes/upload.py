@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, Depends
 import shutil
 from typing import BinaryIO
+import os
 
 from app.services.pdf_service import extract_text, chunk_text
 from app.services.embedding_service import get_embeddings
@@ -14,6 +15,8 @@ router = APIRouter()
 
 @router.post("/upload")
 def upload_file(file: UploadFile = File(...), user = Depends(get_current_user)):
+
+    os.makedirs("uploads", exist_ok=True)
 
     file_path = f"uploads/{file.filename}"
 
